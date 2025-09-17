@@ -58,10 +58,15 @@ def get_schematic_size(worldedit: File) -> dict[str, int]:
     Returns:
         dict[str, int]: A dictionary containing the size of the schematic in the x, y, and z directions.
     """
+    x, y, z = int(worldedit["Length"]), int(worldedit["Height"]), int(worldedit["Width"])
+    # x = min(x, 48)
+    # y = min(y, 48)
+    # z = min(z, 48)
+
     return {
-        "x": int(worldedit["Length"]),
-        "y": int(worldedit["Height"]),
-        "z": int(worldedit["Width"]),
+        "x": x,
+        "y": y,
+        "z": z
     }
 
 
@@ -126,86 +131,65 @@ def process_block_palette(
     return nbt_schematic, new_palette
 
 
-def process_block_entities(worldedit: File) -> dict[str, Compound]:
-    """Processes block entities from a worldedit schematic file and returns them as a dictionary.
+# def process_blocks(
+#     worldedit: File,
+#     nbt_schematic: CompoundSchema,
+#     byte_palette: dict[int, str],
+#     new_palette: dict[str, int],
+#     block_entities: dict[str, Compound] = {},
+#     queue: Union[multiprocessing.Queue, None] = None,
+# ) -> CompoundSchema:
+#     """Processes blocks from a worldedit schematic file and returns them in a structure file format.
 
-        Args:
-    worldedit (nbtlib.File): The worldedit schematic file.
+#     Args:
+#         worldedit (File): The worldedit schematic file.
+#         nbt_schematic (CompoundSchema): The structure file.
+#         byte_palette (dict[int, str]): The old block palette from world edit.
+#         new_palette (dict[str, int]): The new block palette to use.
+#         input_file (str, optional): The name of the input file, used for the loading bar. Defaults to "".
+#         block_entities (dict[str, Compound], optional): The block entities. If empty, they will be devoid of nbt. Defaults to {}.
+#         queue (Union[multiprocessing.Queue, None], optional): The queue to use for the loading bar. Defaults to None.
 
-            Returns:
-    dict[str, Compound]: A dictionary of block entities.
-    """
-    block_entities = {}
-    for data in worldedit["BlockEntities"].copy():
-        # Create a copy so we do not modify the worldedit file accidentally
-        data = data.copy()
-        key = f"{int(data['Pos'][0])} {int(data['Pos'][1])} {int(data['Pos'][2])}"
-        data["id"] = data["Id"]
-        del data["Id"]
-        del data["Pos"]
-        block_entities[key] = data
-    return block_entities
+#     Returns:
+#         CompoundSchema: The structure file.
+#     """
 
+#     # Note: block entiies is the set of block entities
 
-def process_blocks(
-    worldedit: File,
-    nbt_schematic: CompoundSchema,
-    byte_palette: dict[int, str],
-    new_palette: dict[str, int],
-    block_entities: dict[str, Compound] = {},
-    queue: Union[multiprocessing.Queue, None] = None,
-) -> CompoundSchema:
-    """Processes blocks from a worldedit schematic file and returns them in a structure file format.
+#     size: dict[str, int] = get_schematic_size(worldedit)
 
-    Args:
-        worldedit (File): The worldedit schematic file.
-        nbt_schematic (CompoundSchema): The structure file.
-        byte_palette (dict[int, str]): The old block palette from world edit.
-        new_palette (dict[str, int]): The new block palette to use.
-        input_file (str, optional): The name of the input file, used for the loading bar. Defaults to "".
-        block_entities (dict[str, Compound], optional): The block entities. If empty, they will be devoid of nbt. Defaults to {}.
-        queue (Union[multiprocessing.Queue, None], optional): The queue to use for the loading bar. Defaults to None.
+#     for i in range(len(worldedit["BlockData"])):
+#         x = floor((i % (size["z"] * size["x"])) % size["z"])
+#         y = floor(i / (size["z"] * size["x"]))
+#         z = floor((i % (size["z"] * size["x"])) / size["z"])
+#         key: str = f"{x} {y} {z}"
 
-    Returns:
-        CompoundSchema: The structure file.
-    """
+#         block_id = int(worldedit["BlockData"][i])
 
-    # Note: block entiies is the set of block entities
+#         try:
+#             block: str = byte_palette[block_id]
+#         except KeyError:
+#             block: str = byte_palette[0]
+#             logging.warning(
+#                 f"We couldn't process the block at {key}: Block {block_id} doesn't exist. Defaulting to block 0 ({block})."
+#             )
 
-    size: dict[str, int] = get_schematic_size(worldedit)
+#         if key in block_entities:
+#             nbt_schematic["blocks"].append(
+#                 {
+#                     "state": new_palette[block],
+#                     "pos": [x, y, z],
+#                     "nbt": block_entities[key],
+#                 }
+#             )
+#         else:
+#             nbt_schematic["blocks"].append(
+#                 {"state": new_palette[block], "pos": [x, y, z]}
+#             )
+#         if queue:
+#             queue.put(True)
 
-    for i in range(len(worldedit["BlockData"])):
-        x = floor((i % (size["z"] * size["x"])) % size["z"])
-        y = floor(i / (size["z"] * size["x"]))
-        z = floor((i % (size["z"] * size["x"])) / size["z"])
-        key: str = f"{x} {y} {z}"
-
-        block_id = int(worldedit["BlockData"][i])
-
-        try:
-            block: str = byte_palette[block_id]
-        except KeyError:
-            block: str = byte_palette[0]
-            logging.warning(
-                f"We couldn't process the block at {key}: Block {block_id} doesn't exist. Defaulting to block 0 ({block})."
-            )
-
-        if key in block_entities:
-            nbt_schematic["blocks"].append(
-                {
-                    "state": new_palette[block],
-                    "pos": [x, y, z],
-                    "nbt": block_entities[key],
-                }
-            )
-        else:
-            nbt_schematic["blocks"].append(
-                {"state": new_palette[block], "pos": [x, y, z]}
-            )
-        if queue:
-            queue.put(True)
-
-    return nbt_schematic
+#     return nbt_schematic
 
 def process_single_block(
     worldedit: File,
@@ -259,28 +243,39 @@ def process_file(
     """
     logging.info(f"Processing {input_file}...")
     try:
+        
         with load(input_file) as worldedit:
             nbt_schematic: CompoundSchema = initiate_schema(worldedit)
 
-            block_entities = process_block_entities(worldedit)
-
+            block_entities = {}
             byte_palette = get_block_palette(worldedit)
 
-            nbt_schematic, new_palette = process_block_palette(
-                nbt_schematic, byte_palette
-            )
+            temp_schem, full_palette = process_block_palette(
+                    nbt_schematic, byte_palette
+                )
 
-            nbt_schematic = process_blocks(
-                worldedit=worldedit,
-                nbt_schematic=nbt_schematic,
-                byte_palette=byte_palette,
-                new_palette=new_palette,
-                block_entities=block_entities,
-                queue=queue,  # type: ignore - The type checker doesn't like multiprocessing.Queue
-            )
+            for block in full_palette:
+                nbt_schematic: CompoundSchema = initiate_schema(worldedit)
+                nbt_schematic, new_palette = process_block_palette(
+                    nbt_schematic, byte_palette
+                )
 
-        logging.info(f"Saving {output_file}...")
-        File({"": Compound(nbt_schematic)}, gzipped=True).save(output_file)
+                nbt_schematic = process_single_block(
+                    worldedit=worldedit,
+                    nbt_schematic=nbt_schematic,
+                    byte_palette=byte_palette,
+                    new_palette=new_palette,
+                    block_entities=block_entities,
+                    single_block_name=block,
+                    queue=queue,  # type: ignore - The type checker doesn't like multiprocessing.Queue
+                )
+                logging.info(f"Saving {output_file}...")
+                # output_file == "yeast.nbt", block == "minecraft:name". The following variables are text
+                file_name, nbt = output_file.split(".")
+                minecraft, block_name = block.split(":")
+                File({"": Compound(nbt_schematic)}, gzipped=True).save(file_name + "_" + block_name + ".nbt")
+
+
     except Exception as e:
         logging.error(f"An error occurred while processing {input_file}: {repr(e)}")
 
