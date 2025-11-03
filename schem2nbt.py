@@ -24,7 +24,6 @@ def structure_schema() -> CompoundSchema:
         "Structure",
         {
             "DataVersion": Int,
-            "author": String,
             "size": List[Int],
             "palette": List[
                 schema(
@@ -78,7 +77,7 @@ def initiate_schema(worldedit: File) -> CompoundSchema:
     nbt_schematic["DataVersion"] = SCHEMATIC_VERSION
     nbt_schematic["palette"] = []
     nbt_schematic["blocks"] = []
-    nbt_schematic["author"] = "Folfy_Blue"
+    # nbt_schematic["author"] = "Folfy_Blue"
 
     size: dict[str, int] = get_schematic_size(worldedit)
 
