@@ -218,7 +218,6 @@ def process_single_block(
     byte_palette: dict[int, str],
     new_palette: dict[str, int],
     block_entities: dict[str, Compound] = {},
-    single_block_name: str = "lime_stained_glass",
     queue: Union[multiprocessing.Queue, None] = None,
 ) -> list:
 
@@ -229,7 +228,6 @@ def process_single_block(
     # tuple split into x, y, z
     region_nums = [math.ceil(size["x"]/48), math.ceil(size["y"]/48), math.ceil(size["z"]/48)]
 
-
     # Creates empty 3d array of right size
     for x_index in range(region_nums[0]):
         region_array.append([])
@@ -239,6 +237,9 @@ def process_single_block(
                 nbt_schematic_temp = initiate_schema_from_size(size=size)
                 region_array[x_index][y_index].append([])
                 region_array[x_index][y_index][z_index] = nbt_schematic_temp
+
+
+
 
     # region_array = np.empty(region_nums)
 
@@ -257,12 +258,10 @@ def process_single_block(
             logging.warning(
                 f"We couldn't process the block at {key}: Block {block_id} doesn't exist. Defaulting to block 0 ({block})."
             )
-        
-        # appends a new block to the nbt if it matches
-        if block == single_block_name:
-            region_array[x // 48][y // 48][z // 48]["blocks"].append(
-                    {"state": new_palette[block], "pos": [x % 48, y % 48, z % 48]}
-                )
+
+        region_array[x // 48][y // 48][z // 48]["blocks"].append(
+                {"state": new_palette[block], "pos": [x % 48, y % 48, z % 48]}
+            )
 
         # Not quite sure what this does
         if queue:
@@ -306,56 +305,29 @@ def process_file(
                     nbt_schematic, byte_palette
                 )
             
-            for block in full_palette:
-                print(block)
-                if block == "minecraft:air":
-                    continue
 
-                nbt_schematic: CompoundSchema = initiate_schema(worldedit)
-                nbt_schematic, new_palette = process_block_palette(
-                    nbt_schematic, byte_palette
-                )
+            nbt_schematic: CompoundSchema = initiate_schema(worldedit)
+            nbt_schematic, new_palette = process_block_palette(
+                nbt_schematic, byte_palette
+            )
 
-                region_list = process_single_block(
-                    worldedit=worldedit,
-                    nbt_schematic=nbt_schematic,
-                    byte_palette=byte_palette,
-                    new_palette=new_palette,
-                    block_entities=block_entities,
-                    single_block_name=block,
-                    queue=queue,  # type: ignore - The type checker doesn't like multiprocessing.Queue
-                )
-                logging.info(f"Saving {output_file}...")
-                # output_file == "yeast.nbt", block == "minecraft:name". The following variables are text
-                #file_name, nbt = output_file.split(".")
-                minecraft, block_name = block.split(":")
-                
-                directory_name = block_name
-                try:
-                    os.mkdir(file_name + "/" + directory_name)
-                    print(f"Directory '{directory_name}' created successfully.")
-                except FileExistsError:
-                    print(f"Directory '{directory_name}' already exists.")
-                except PermissionError:
-                    print(f"Permission denied: Unable to create '{directory_name}'.")
-                except Exception as e:
-                    print(f"An error occurred: {e}")
+            region_list = process_single_block(
+                worldedit=worldedit,
+                nbt_schematic=nbt_schematic,
+                byte_palette=byte_palette,
+                new_palette=new_palette,
+                block_entities=block_entities,
+                queue=queue,  # type: ignore - The type checker doesn't like multiprocessing.Queue
+            )
+            logging.info(f"Saving {output_file}...")
+            # output_file == "yeast.nbt", block == "minecraft:name". The following variables are text
+            #file_name, nbt = output_file.split(".")
 
-                # Create a file that has 
-                mcfunction_filler = open(f"{file_name}/{directory_name}/build.mcfunction", "w")
-
-                for i in range(len(region_list)):
-                    for j in range(len(region_list[i])):
-                        for k in range(len(region_list[i][j])):
-                            File({"": Compound(nbt_schematic)}, gzipped=True).save(f"{file_name}/{directory_name}/{i}_{j}_{k}" + ".nbt")
-                            mcfunction_filler.write(f"place template celledit:{file_name}/{directory_name}/{i}_{j}_{k} ~{48 * i} ~{48 * j} ~{48 * k}\n")
-                
-                mcfunction_breaker = open(f"{file_name}/{directory_name}/destroy.mcfunction", "w")
-                
-                for i in range(len(region_list)):
-                    for j in range(len(region_list[i])):
-                        for k in range(len(region_list[i][j])):
-                            mcfunction_breaker.write(f"fill ~{32*i} ~{32*j} ~{32*k} ~{32*i + 31} ~{32*j + 31} ~{32*k + 31} air replace minecraft:{block_name}\n")
+            for i in range(len(region_list)):
+                for j in range(len(region_list[i])):
+                    for k in range(len(region_list[i][j])):
+                        File({"": Compound(nbt_schematic)}, gzipped=True).save(f"{file_name}_{i}_{j}_{k}" + ".nbt")
+            
 
     except Exception as e:
         logging.error(f"An error occurred while processing {input_file}: {repr(e)}")
