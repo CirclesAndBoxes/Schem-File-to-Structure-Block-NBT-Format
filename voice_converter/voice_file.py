@@ -1,5 +1,4 @@
 import asyncio
-import random
 
 import edge_tts
 from edge_tts import VoicesManager
@@ -65,7 +64,16 @@ texts = [
 ]
 
 texts = [
-"These are cancerous epithelial cells. Right away we see that the nuclear membrane has a sharper and more needle-like shape compared to the normal cells.",
+"These are cancerous epithelial cells. Right away we see that the cellular membrane has a sharper and more needle-like shape compared to the normal cells.",
+"The organelles in the cancerous cells are also more clumped together and expanded.",
+"Significant changes are also seen in the nucleus of the epithelial cells. The nuclear envelope and nucleolus of the cancerous epithelial cells are both enlarged compared to normal epithelial cells.",
+"Being able to tell the changes of various cells allows medical practitioners to tell when your body has diseases and allows them to find effective treatments."
+]
+
+
+
+texts = [
+"These are cancerous epithelial cells. Right away we see that the cellular membrane has a sharper and more needle-like shape compared to normal epithelial cells.",
 "The organelles in the cancerous cells are also more clumped together and expanded.",
 "Significant changes are also seen in the nucleus of the epithelial cells. The nuclear envelope and nucleolus of the cancerous epithelial cells are both enlarged compared to normal epithelial cells.",
 "Being able to tell the changes of various cells allows medical practitioners to tell when your body has diseases and allows them to find effective treatments."
@@ -82,8 +90,6 @@ texts = [
     "The red concrete represents cytosolic proteins. Cytosolic proteins are proteins inside of the cell that perform functions that the cells need to survive.",
     "Each of these components work together to allow the minimal cell to sustain life."
 ]
-
-
 OUTPUT_FILE = "voice_converter/test.mp3"
 
 async def amain() -> None:
