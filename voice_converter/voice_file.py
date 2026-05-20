@@ -56,12 +56,7 @@ texts = [
 ]
 
 
-texts = [
-"Knowing the shape and function of the different organelles can help medical workers identify abnormalities in cells. These cells are non-cancerous epithelial breast cells.",
-"The light blue glass showing the outer layer of the cell represents the cell membrane of the cell.",
-"These lime structures are various organelles of the epithelial cells, each performing different functions for the cell.",
-"This is a nucleus of the epithelial cell. The pink stained glass represents the nuclear envelope while the purple concrete represents the nucleolus, which produces ribosomes for the cell."
-]
+
 
 texts = [
 "These are cancerous epithelial cells. Right away we see that the cellular membrane has a sharper and more needle-like shape compared to the normal cells.",
@@ -90,6 +85,25 @@ texts = [
     "The red concrete represents cytosolic proteins. Cytosolic proteins are proteins inside of the cell that perform functions that the cells need to survive.",
     "Each of these components work together to allow the minimal cell to sustain life."
 ]
+
+
+texts = [
+    "The red stained glass represents organelles inside of neutrophils that have a high refractive index. ",
+    "In real cell scans, it’s not always possible to determine exactly what each organelle is. So instead, we mark different locations of the cells based on how fast light  travels through them..",
+    "Structures with high refractive indices in the neutrophils are composed mostly of the nucleus, granules, and mitochondria, which are the most abundant structures in the neutrophils.",
+    "The blue stained glass represents structures that have a low refractive index, including the membrane and cytosol of the neutrophils. ",
+    "Neutrophils are one of the most common types of white blood cells, and they are responsible for defending the body against infections. Neutrophils use a process called phagocytosis, or “cell eating” to wrap around invasive species and destroy them.",
+    "You will notice many destroyed neutrophils among the cells (shown by the floating structures of a broken cell) Neutrophils have short lives and are destroyed in multiple ways, such as netosis, where they break down without exposing toxic contents to other cells.",
+    "Neutrophils are an important part of our immune system, and they play a crucial role in protecting our bodies from harmful pathogens."
+]
+
+texts = [
+"Knowing the shape and function of the different organelles can help medical workers identify abnormalities in cells. These cells are non-cancerous epithelial breast cells.",
+"The light blue glass showing the outer layer of the cell represents the cell membrane of the cell.",
+"These lime structures are various organelles of the epithelial cells, each performing different functions for the cell.",
+"This is a nucleus of the epithelial cell. The pink stained glass represents the nuclear envelope while the purple concrete represents the nucleolus, which produces ribosomes for the cell."
+]
+
 OUTPUT_FILE = "voice_converter/test.mp3"
 
 async def amain() -> None:
@@ -99,7 +113,7 @@ async def amain() -> None:
     
     for i in range(len(texts)):
         text = texts[i]
-        output_path = f"voice_converter/martini/ryan{i}.mp3"
+        output_path = f"voice_converter/breast/ryan{i}.mp3"
         communicate = edge_tts.Communicate(text, VOICE)
         await communicate.save(output_path)
 
