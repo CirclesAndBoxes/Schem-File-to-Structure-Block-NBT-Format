@@ -1,12 +1,7 @@
-import array
-import subprocess
-import sys
-import time
-from pathlib import Path
-import numpy as np
-import soundfile as sf  # pip install soundfile
-import miniaudio       # pip install miniaudio
-from scipy import signal
+import asyncio
+
+import edge_tts
+from edge_tts import VoicesManager
 
 
 # async def amain() -> None:
@@ -126,78 +121,22 @@ texts = [
     "Together, the chemical reactions in a cell are known as the cell's metabolism."
 ]
 
+texts = [
+    "This is an updated representation of the minimal cell using the Martini 3 simulation. Each block is half a nanometer.",
+]
 
-OUTPUT_FILE = "voice_converter/test.mp3"
+# OUTPUT_FILE = "voice_converter/test.mp3"
 
-def main() -> None:
-    out_dir = Path(__file__).parent / "test_martini2"
-    out_dir.mkdir(exist_ok=True)
-
-    for i, text in enumerate(texts):
-        mp3_path = out_dir / f"ryan{i}.mp3"
-        ogg_path = out_dir / f"ryan{i}.ogg"
-
-        if ogg_path.exists():
-            print(f"[{i}] Already exists: {ogg_path}", flush=True)
-            continue
-
-        # Step 1: TTS → MP3 in a subprocess with an OS-level timeout.
-        # Text is passed via stdin to avoid Windows' 8191-char command-line limit.
-        print(f"[{i}] Generating TTS...", flush=True)
-        script = (
-            "import asyncio, edge_tts, sys; "
-            f"asyncio.run(edge_tts.Communicate(sys.stdin.read(), {repr(VOICE)}).save({repr(str(mp3_path))}))"
-        )
-        subprocess.run(
-            [sys.executable, "-c", script],
-            input=text.encode("utf-8"),
-            timeout=120,
-            check=True
-        )
-
-        # Step 2: MP3 → stereo OGG
-        try:
-            decoded = miniaudio.decode_file(str(mp3_path), output_format=miniaudio.SampleFormat.SIGNED16)
-            nchannels, rate = decoded.nchannels, decoded.sample_rate
-            raw = array.array(decoded.samples.typecode, decoded.samples)
-            del decoded
-
-            stereo = raw if nchannels == 2 else array.array('h', [s for s in raw for _ in range(2)])
-            stereo_np = np.array(stereo, dtype=np.int16).reshape(-1, 2).astype(np.float32) / 32768.0
-
-            # Resample to 48kHz for OPUS codec (which doesn't support 44.1kHz)
-            if rate == 44100:
-                ratio = 48000.0 / 44100.0
-                num_samples = int(stereo_np.shape[0] * ratio)
-                stereo_np = signal.resample(stereo_np, num_samples)
-                rate = 48000
-
-            sf.write(str(ogg_path), stereo_np, rate, format='OGG', subtype='OPUS')
-            print(f"[{i}] Saved: {ogg_path}", flush=True)
-        except Exception as e:
-            print(f"[{i}] Conversion error: {e}", flush=True)
-            import traceback
-            traceback.print_exc()
-        finally:
-            try:
-                mp3_path.unlink(missing_ok=True)
-            except Exception:
-                pass
-
-        time.sleep(5)
-
-    # Clean up any leftover MP3 files
-    for mp3 in out_dir.glob("*.mp3"):
-        mp3.unlink()
-        print(f"Cleaned up: {mp3}", flush=True)
-
-    print("All done!")
-
+async def amain() -> None:
+    """Main function"""
+    # communicate = edge_tts.Communicate(TEXT, VOICE)
+    # await communicate.save(OUTPUT_FILE)
+    
+    for i in range(len(texts)):
+        text = texts[i]
+        output_path = f"voice_converter/martini3/ryan{i}.mp3"
+        communicate = edge_tts.Communicate(text, VOICE)
+        await communicate.save(output_path)
 
 if __name__ == "__main__":
-    last_ogg = Path(__file__).parent / "martini2" / f"ryan{len(texts) - 1}.ogg"
-    while not last_ogg.exists():
-        main()
-        if not last_ogg.exists():
-            print(f"Not all files saved yet, retrying...", flush=True)
-            time.sleep(10)
+    asyncio.run(amain())
